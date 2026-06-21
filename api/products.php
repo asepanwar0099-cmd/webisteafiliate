@@ -1,6 +1,6 @@
 <?php
 header('Content-Type: application/json');
-$dataFile = '../products.json';
+$dataFile = __DIR__ . '/../products.json';
 
 if (!file_exists($dataFile)) {
     file_put_contents($dataFile, json_encode([]));
