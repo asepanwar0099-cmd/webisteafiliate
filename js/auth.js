@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const toggleAdminCodeBtn = document.getElementById('toggleAdminCode');
     const adminCodeWrapper = document.getElementById('adminCodeWrapper');
     const forgotPasswordLink = document.getElementById('forgotPasswordLink');
+    const API_AUTH_URL = new URL('api/auth.php', window.location.href).href;
 
     // Toggle Password Visibility
     document.querySelectorAll('.toggle-password').forEach(icon => {
@@ -32,10 +33,42 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    const API_AUTH_URL = './api/auth.php';
+
     function showAlert(message, type = 'danger') {
         authAlert.className = `alert alert-${type} animate-fade-up`;
         authAlert.textContent = message;
         authAlert.classList.remove('d-none');
+    }
+
+    async function authPost(payload) {
+        try {
+            const res = await fetch(API_AUTH_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const text = await res.text();
+            let data;
+            try {
+                data = JSON.parse(text);
+            } catch {
+                throw new Error(`Respons server tidak valid: ${text || 'Kosong'}`);
+            }
+
+            if (!res.ok) {
+                const serverError = data.error || data.message || res.statusText || 'Server error';
+                throw new Error(`Server auth gagal: ${serverError}`);
+            }
+
+            return data;
+        } catch (err) {
+            if (err instanceof TypeError || err.message.toLowerCase().includes('failed to fetch') || err.message.toLowerCase().includes('networkerror')) {
+                throw new Error('Terjadi kesalahan koneksi. Pastikan aplikasi dijalankan pada server PHP dan file api/auth.php tersedia.');
+            }
+            throw err;
+        }
     }
 
     // Login Submission
@@ -45,20 +78,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const password = document.getElementById('loginPassword').value;
 
         try {
-            const res = await fetch('api/auth.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'login', identifier, password })
-            });
-            const data = await res.json();
-            
+            const data = await authPost({ action: 'login', identifier, password });
             if (data.success) {
                 window.location.href = data.role === 'admin' ? 'admin.html' : 'index.html';
             } else {
-                showAlert(data.error);
+                showAlert(data.error || 'Login gagal.');
             }
         } catch (err) {
-            showAlert('Terjadi kesalahan koneksi.');
+            showAlert(err.message);
         }
     });
 
@@ -70,20 +97,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const adminCode = document.getElementById('regAdminCode').value;
 
         try {
-            const res = await fetch('api/auth.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'register', identifier, password, adminCode })
-            });
-            const data = await res.json();
-            
+            const data = await authPost({ action: 'register', identifier, password, adminCode });
             if (data.success) {
                 window.location.href = data.role === 'admin' ? 'admin.html' : 'index.html';
             } else {
-                showAlert(data.error);
+                showAlert(data.error || 'Pendaftaran gagal.');
             }
         } catch (err) {
-            showAlert('Terjadi kesalahan koneksi.');
+            showAlert(err.message);
         }
     });
 

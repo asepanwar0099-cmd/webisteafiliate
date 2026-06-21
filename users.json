@@ -10,5 +10,11 @@
         "identifier": "0895326738684",
         "password": "$2y$10$zOnMfmq9UVw1UaNuehm\/Weu0Tc7BWz7olxJY4qzhL\/86oxvVJjrGe",
         "role": "customer"
+    },
+    {
+        "id": "user_1782010138",
+        "identifier": "testuser+copilot@example.com",
+        "password": "$2y$10$Vr65\/unwy7ksp7DwbRGOm.U3e7T9cretRbMMCanii840IWxo3x2Jm",
+        "role": "customer"
     }
 ]

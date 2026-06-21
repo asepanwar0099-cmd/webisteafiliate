@@ -2,9 +2,15 @@
 session_start();
 header('Content-Type: application/json');
 
-$usersFile = '../users.json';
+$usersFile = __DIR__ . '/../users.json';
 if (!file_exists($usersFile)) {
     file_put_contents($usersFile, json_encode([]));
+}
+
+$rawUsers = file_get_contents($usersFile);
+$users = json_decode($rawUsers, true);
+if (!is_array($users)) {
+    $users = [];
 }
 
 $inputJSON = file_get_contents('php://input');
