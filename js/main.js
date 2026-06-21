@@ -69,9 +69,21 @@ async function checkAuth() {
 
 // Fetch Products
 async function fetchProducts() {
+    // Try server API first, then fallback to static products.json for hosting on GitHub Pages
     try {
-        const response = await fetch('api/products.php');
-        products = await response.json();
+        let response;
+        try {
+            response = await fetch('api/products.php');
+            if (!response.ok) throw new Error('api/products.php returned ' + response.status);
+            products = await response.json();
+        } catch (err) {
+            // fallback to static JSON
+            console.warn('Falling back to products.json:', err.message || err);
+            response = await fetch('products.json');
+            if (!response.ok) throw new Error('products.json returned ' + response.status);
+            products = await response.json();
+        }
+
         // Ensure numeric price and tags array for rendering
         products = products.map(p => ({ ...p, price: Number(p.price) || 0, tags: Array.isArray(p.tags) ? p.tags : [] }));
         renderCategories();
