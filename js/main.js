@@ -3,19 +3,22 @@ let products = [];
 let cart = [];
 let currentUser = null;
 
-// DOM Elements
-const productGrid = document.getElementById('productGrid');
-const categoryFilter = document.getElementById('categoryFilter');
-const cartItemsContainer = document.getElementById('cartItems');
-const cartCount = document.getElementById('cartCount');
-const cartTotalPrice = document.getElementById('cartTotalPrice');
-const btnCheckout = document.getElementById('btnCheckout');
-const authBtnContainer = document.getElementById('authBtnContainer');
-const adminLinkContainer = document.getElementById('adminLinkContainer');
+// DOM Elements (initialized after DOMContentLoaded to avoid null refs)
+let productGrid, categoryFilter, cartItemsContainer, cartCount, cartTotalPrice, btnCheckout, authBtnContainer, adminLinkContainer;
 
 const formatRupiah = (number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number);
 
 document.addEventListener('DOMContentLoaded', async () => {
+    // initialize DOM refs
+    productGrid = document.getElementById('productGrid');
+    categoryFilter = document.getElementById('categoryFilter');
+    cartItemsContainer = document.getElementById('cartItems');
+    cartCount = document.getElementById('cartCount');
+    cartTotalPrice = document.getElementById('cartTotalPrice');
+    btnCheckout = document.getElementById('btnCheckout');
+    authBtnContainer = document.getElementById('authBtnContainer');
+    adminLinkContainer = document.getElementById('adminLinkContainer');
+
     await checkAuth();
     fetchProducts();
     loadCartFromStorage();
@@ -74,7 +77,10 @@ async function fetchProducts() {
         renderCategories();
         renderProducts('all');
     } catch (error) {
-        productGrid.innerHTML = '<div class="col-12 text-center text-danger">Gagal memuat produk.</div>';
+        console.error('Failed to fetch products:', error);
+        const msg = `<div class="col-12 text-center text-danger">Gagal memuat produk: ${error.message || 'Unknown error'}</div>`;
+        if (productGrid) productGrid.innerHTML = msg;
+        else alert('Gagal memuat produk: ' + (error.message || error));
     }
 }
 
