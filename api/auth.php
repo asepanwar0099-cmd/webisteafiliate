@@ -2,9 +2,8 @@
 session_start();
 header('Content-Type: application/json');
 
-$usersFile = '../data/users.json';
+$usersFile = '../users.json';
 if (!file_exists($usersFile)) {
-    if (!is_dir('../data')) mkdir('../data', 0777, true);
     file_put_contents($usersFile, json_encode([]));
 }
 

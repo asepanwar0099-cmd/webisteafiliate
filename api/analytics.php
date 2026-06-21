@@ -1,10 +1,9 @@
 <?php
 header('Content-Type: application/json');
 
-$dataFile = '../data/analytics.json';
+$dataFile = '../analytics.json';
 
 if (!file_exists($dataFile)) {
-    if (!is_dir('../data')) mkdir('../data', 0777, true);
     file_put_contents($dataFile, json_encode([]));
 }
 
