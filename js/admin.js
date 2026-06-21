@@ -146,7 +146,7 @@ addForm.addEventListener('submit', async (e) => {
     
     const newProduct = {
         title: addTitle.value,
-        price: addPrice.value,
+        price: Number(addPrice.value) || 0,
         image: addImage.value,
         category: addCategory.value,
         description: addDesc.value,
@@ -168,10 +168,10 @@ addForm.addEventListener('submit', async (e) => {
             previewImageAdd.src = 'https://via.placeholder.com/300x300?text=Preview+Gambar';
             fetchAdminProducts();
         } else {
-            alert('Gagal menyimpan produk.');
+            alert('Gagal menyimpan produk: ' + (result.error || 'Unknown error'));
         }
     } catch (err) {
-        alert('Gagal menyimpan.');
+        alert('Gagal menyimpan: ' + (err.message || err));
     }
 });
 

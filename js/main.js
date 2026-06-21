@@ -69,6 +69,8 @@ async function fetchProducts() {
     try {
         const response = await fetch('api/products.php');
         products = await response.json();
+        // Ensure numeric price and tags array for rendering
+        products = products.map(p => ({ ...p, price: Number(p.price) || 0, tags: Array.isArray(p.tags) ? p.tags : [] }));
         renderCategories();
         renderProducts('all');
     } catch (error) {

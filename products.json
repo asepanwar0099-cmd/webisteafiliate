@@ -1,5 +1,20 @@
 [
     {
+        "id": "prod_1782008319",
+        "title": "Produk UI Test",
+        "description": "Dari UI test",
+        "price": 45000,
+        "image": "https:\/\/via.placeholder.com\/450",
+        "category": "TestUI",
+        "tags": [
+            "Baru"
+        ],
+        "rating": 5,
+        "isAffiliate": false,
+        "affiliateLink": "",
+        "isPinned": false
+    },
+    {
         "id": "prod_1782007758",
         "title": "Test Produk",
         "description": "Deskripsi test",
