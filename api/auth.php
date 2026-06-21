@@ -1,134 +1,199 @@
 <?php
+declare(strict_types=1);
+
 session_start();
-header('Content-Type: application/json');
+
+// Pastikan response selalu JSON
+header('Content-Type: application/json; charset=utf-8');
+ini_set('display_errors', '0');
+error_reporting(E_ALL);
 
 $usersFile = __DIR__ . '/../users.json';
-if (!file_exists($usersFile)) {
-    file_put_contents($usersFile, json_encode([]));
-}
 
-$rawUsers = file_get_contents($usersFile);
-$users = json_decode($rawUsers, true);
-if (!is_array($users)) {
-    $users = [];
-}
-
-$inputJSON = file_get_contents('php://input');
-$input = json_decode($inputJSON, true);
-
-if (!isset($input['action'])) {
-    http_response_code(400);
-    echo json_encode(['success' => false, 'error' => 'Action is required']);
-    exit;
-}
-
-$action = $input['action'];
-
-if ($action === 'register') {
-    $identifier = $input['identifier']; // Email or Phone
-    $password = $input['password'];
-    $adminCode = $input['adminCode'] ?? '';
-
-    $users = json_decode(file_get_contents($usersFile), true);
-    
-    // Check if exists
-    foreach ($users as $user) {
-        if ($user['identifier'] === $identifier) {
-            echo json_encode(['success' => false, 'error' => 'Email / No HP sudah terdaftar.']);
-            exit;
-        }
+try {
+    if (!file_exists($usersFile)) {
+        file_put_contents($usersFile, json_encode([], JSON_PRETTY_PRINT));
     }
 
-    $role = 'customer';
-    if ($adminCode === 'ADMINPINK2026') {
-        $role = 'admin';
-    } else if (!empty($adminCode)) {
-        echo json_encode(['success' => false, 'error' => 'Kode Admin salah. Kosongkan jika mendaftar sebagai pelanggan.']);
+    $rawUsers = file_get_contents($usersFile);
+    $users = json_decode($rawUsers ?: '[]', true);
+    if (!is_array($users)) {
+        $users = [];
+    }
+
+    $inputJSON = file_get_contents('php://input');
+    $input = json_decode($inputJSON ?: '{}', true);
+    if (!is_array($input)) {
+        $input = [];
+    }
+
+    if (!isset($input['action']) || !is_string($input['action']) || $input['action'] === '') {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'error' => 'Action is required']);
         exit;
     }
 
-    $newUser = [
-        'id' => 'user_' . time(),
-        'identifier' => $identifier,
-        'password' => password_hash($password, PASSWORD_DEFAULT),
-        'role' => $role
-    ];
+    $action = $input['action'];
 
-    $users[] = $newUser;
-    file_put_contents($usersFile, json_encode($users, JSON_PRETTY_PRINT));
+    if ($action === 'register') {
+        $identifier = isset($input['identifier']) ? trim((string)$input['identifier']) : '';
+        $password = isset($input['password']) ? (string)$input['password'] : '';
+        $adminCode = isset($input['adminCode']) ? trim((string)$input['adminCode']) : '';
 
-    // Auto login
-    $_SESSION['user_id'] = $newUser['id'];
-    $_SESSION['role'] = $newUser['role'];
-    $_SESSION['identifier'] = $newUser['identifier'];
+        if ($identifier === '' || $password === '') {
+            http_response_code(422);
+            echo json_encode(['success' => false, 'error' => 'Email / No HP dan password wajib diisi.']);
+            exit;
+        }
 
-    echo json_encode(['success' => true, 'role' => $role]);
-    exit;
-}
+        // Reload users untuk mencegah konflik
+        $rawUsers = file_get_contents($usersFile) ?: '[]';
+        $users = json_decode($rawUsers, true);
+        if (!is_array($users)) $users = [];
 
-if ($action === 'login') {
-    $identifier = $input['identifier'];
-    $password = $input['password'];
-
-    $users = json_decode(file_get_contents($usersFile), true);
-
-    foreach ($users as $user) {
-        if ($user['identifier'] === $identifier) {
-            // Check password (handle plain text 'password' for default admin, or hashed for new users)
-            if (password_verify($password, $user['password']) || $password === $user['password']) {
-                $_SESSION['user_id'] = $user['id'];
-                $_SESSION['role'] = $user['role'];
-                $_SESSION['identifier'] = $user['identifier'];
-                echo json_encode(['success' => true, 'role' => $user['role']]);
+        foreach ($users as $user) {
+            if (is_array($user) && isset($user['identifier']) && (string)$user['identifier'] === $identifier) {
+                echo json_encode(['success' => false, 'error' => 'Email / No HP sudah terdaftar.']);
                 exit;
             }
         }
-    }
 
-    echo json_encode(['success' => false, 'error' => 'Kredensial tidak valid.']);
-    exit;
-}
-
-if ($action === 'logout') {
-    session_destroy();
-    echo json_encode(['success' => true]);
-    exit;
-}
-
-if ($action === 'check') {
-    if (isset($_SESSION['user_id'])) {
-        echo json_encode([
-            'loggedIn' => true,
-            'role' => $_SESSION['role'],
-            'identifier' => $_SESSION['identifier']
-        ]);
-    } else {
-        echo json_encode(['loggedIn' => false]);
-    }
-    exit;
-}
-
-if ($action === 'forgot_password') {
-    $identifier = $input['identifier'];
-    $newPassword = $input['newPassword'];
-
-    $users = json_decode(file_get_contents($usersFile), true);
-    $found = false;
-
-    foreach ($users as &$user) {
-        if ($user['identifier'] === $identifier) {
-            $user['password'] = password_hash($newPassword, PASSWORD_DEFAULT);
-            $found = true;
-            break;
+        $role = 'customer';
+        if ($adminCode === 'ADMINPINK2026') {
+            $role = 'admin';
+        } elseif ($adminCode !== '') {
+            echo json_encode(['success' => false, 'error' => 'Kode Admin salah. Kosongkan jika mendaftar sebagai pelanggan.']);
+            exit;
         }
+
+        $newUser = [
+            'id' => 'user_' . time(),
+            'identifier' => $identifier,
+            'password' => password_hash($password, PASSWORD_DEFAULT),
+            'role' => $role
+        ];
+
+        $users[] = $newUser;
+
+        if (file_put_contents($usersFile, json_encode($users, JSON_PRETTY_PRINT)) === false) {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'error' => 'Gagal menyimpan data pengguna.']);
+            exit;
+        }
+
+        // Auto login
+        $_SESSION['user_id'] = $newUser['id'];
+        $_SESSION['role'] = $newUser['role'];
+        $_SESSION['identifier'] = $newUser['identifier'];
+
+        echo json_encode(['success' => true, 'role' => $role]);
+        exit;
     }
 
-    if ($found) {
-        file_put_contents($usersFile, json_encode($users, JSON_PRETTY_PRINT));
-        echo json_encode(['success' => true, 'message' => 'Password berhasil di-reset. Silakan login.']);
-    } else {
-        echo json_encode(['success' => false, 'error' => 'Email / No HP tidak ditemukan.']);
+    if ($action === 'login') {
+        $identifier = isset($input['identifier']) ? trim((string)$input['identifier']) : '';
+        $password = isset($input['password']) ? (string)$input['password'] : '';
+
+        if ($identifier === '' || $password === '') {
+            http_response_code(422);
+            echo json_encode(['success' => false, 'error' => 'Email / No HP dan password wajib diisi.']);
+            exit;
+        }
+
+        $rawUsers = file_get_contents($usersFile) ?: '[]';
+        $users = json_decode($rawUsers, true);
+        if (!is_array($users)) $users = [];
+
+        foreach ($users as $user) {
+            if (!is_array($user) || !isset($user['identifier'], $user['password'], $user['id'], $user['role'])) {
+                continue;
+            }
+
+            if ((string)$user['identifier'] !== $identifier) continue;
+
+            $stored = (string)$user['password'];
+            $ok = password_verify($password, $stored) || $password === $stored; // fallback untuk user lama
+            if ($ok) {
+                $_SESSION['user_id'] = (string)$user['id'];
+                $_SESSION['role'] = (string)$user['role'];
+                $_SESSION['identifier'] = (string)$user['identifier'];
+
+                echo json_encode(['success' => true, 'role' => (string)$user['role']]);
+                exit;
+            }
+        }
+
+        echo json_encode(['success' => false, 'error' => 'Kredensial tidak valid.']);
+        exit;
     }
+
+    if ($action === 'logout') {
+        session_destroy();
+        echo json_encode(['success' => true]);
+        exit;
+    }
+
+    if ($action === 'check') {
+        if (isset($_SESSION['user_id'])) {
+            echo json_encode([
+                'loggedIn' => true,
+                'role' => $_SESSION['role'] ?? 'customer',
+                'identifier' => $_SESSION['identifier'] ?? ''
+            ]);
+        } else {
+            echo json_encode(['loggedIn' => false]);
+        }
+        exit;
+    }
+
+    if ($action === 'forgot_password') {
+        $identifier = isset($input['identifier']) ? trim((string)$input['identifier']) : '';
+        $newPassword = isset($input['newPassword']) ? (string)$input['newPassword'] : '';
+
+        if ($identifier === '' || $newPassword === '') {
+            http_response_code(422);
+            echo json_encode(['success' => false, 'error' => 'Identifier dan password baru wajib diisi.']);
+            exit;
+        }
+
+        $rawUsers = file_get_contents($usersFile) ?: '[]';
+        $users = json_decode($rawUsers, true);
+        if (!is_array($users)) $users = [];
+
+        $found = false;
+
+        foreach ($users as &$user) {
+            if (!is_array($user)) continue;
+            if (!isset($user['identifier'])) continue;
+
+            if ((string)$user['identifier'] === $identifier) {
+                $user['password'] = password_hash($newPassword, PASSWORD_DEFAULT);
+                $found = true;
+                break;
+            }
+        }
+        unset($user);
+
+        if ($found) {
+            if (file_put_contents($usersFile, json_encode($users, JSON_PRETTY_PRINT)) === false) {
+                http_response_code(500);
+                echo json_encode(['success' => false, 'error' => 'Gagal menyimpan perubahan password.']);
+                exit;
+            }
+            echo json_encode(['success' => true, 'message' => 'Password berhasil di-reset. Silakan login.']);
+        } else {
+            echo json_encode(['success' => false, 'error' => 'Email / No HP tidak ditemukan.']);
+        }
+        exit;
+    }
+
+    http_response_code(400);
+    echo json_encode(['success' => false, 'error' => 'Unknown action']);
+    exit;
+
+} catch (Throwable $e) {
+    http_response_code(500);
+    echo json_encode(['success' => false, 'error' => 'Server error: ' . $e->getMessage()]);
     exit;
 }
 ?>
