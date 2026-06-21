@@ -75,13 +75,23 @@ async function fetchProducts() {
         try {
             response = await fetch('api/products.php');
             if (!response.ok) throw new Error('api/products.php returned ' + response.status);
+            const ct = response.headers.get('content-type') || '';
+            if (!ct.includes('application/json')) throw new Error('api/products.php did not return JSON (Content-Type: ' + ct + ')');
             products = await response.json();
         } catch (err) {
             // fallback to static JSON
             console.warn('Falling back to products.json:', err.message || err);
             response = await fetch('products.json');
             if (!response.ok) throw new Error('products.json returned ' + response.status);
-            products = await response.json();
+            const ct2 = response.headers.get('content-type') || '';
+            if (!ct2.includes('application/json') && !ct2.includes('text/plain')) throw new Error('products.json did not return JSON (Content-Type: ' + ct2 + ')');
+            // try parse and catch HTML parse errors
+            try {
+                products = await response.json();
+            } catch (parseErr) {
+                const txt = await response.text();
+                throw new Error('Failed to parse products.json: ' + (parseErr.message || parseErr) + '\nResponse snippet: ' + txt.substring(0,200));
+            }
         }
 
         // Ensure numeric price and tags array for rendering
