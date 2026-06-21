@@ -10,6 +10,15 @@ error_reporting(E_ALL);
 
 $usersFile = __DIR__ . '/../users.json';
 
+function auth_log(string $msg): void {
+    // error_log biasanya lebih reliable dari file write permission di hosting
+    @error_log('[auth_debug] ' . $msg);
+}
+
+auth_log('--- New request ---');
+auth_log('URI: ' . ($_SERVER['REQUEST_URI'] ?? ''));
+auth_log('Method: ' . ($_SERVER['REQUEST_METHOD'] ?? ''));
+
 try {
     if (!file_exists($usersFile)) {
         file_put_contents($usersFile, json_encode([], JSON_PRETTY_PRINT));
