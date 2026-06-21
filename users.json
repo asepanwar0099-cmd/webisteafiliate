@@ -1,0 +1,14 @@
+[
+    {
+        "id": "user_admin1",
+        "identifier": "admin@craft.com",
+        "password": "password",
+        "role": "admin"
+    },
+    {
+        "id": "user_1781977156",
+        "identifier": "0895326738684",
+        "password": "$2y$10$zOnMfmq9UVw1UaNuehm\/Weu0Tc7BWz7olxJY4qzhL\/86oxvVJjrGe",
+        "role": "customer"
+    }
+]
