@@ -1,5 +1,20 @@
 [
     {
+        "id": "prod_1782007758",
+        "title": "Test Produk",
+        "description": "Deskripsi test",
+        "price": 12345,
+        "image": "https:\/\/via.placeholder.com\/400",
+        "category": "Test",
+        "tags": [
+            "Baru"
+        ],
+        "rating": 5,
+        "isAffiliate": false,
+        "affiliateLink": "",
+        "isPinned": false
+    },
+    {
         "id": "prod_1782006508",
         "title": "Jual (Artifisial) Buket Mariposa Kupu kupu hadiah wisuda dan ulang tahun | Shopee Indonesia",
         "description": "Beli (Artifisial) Buket Mariposa Kupu kupu hadiah wisuda dan ulang tahun Terbaru Harga Murah di Shopee. Ada Gratis Ongkir, Promo COD, & Cashback. Cek Review Produk Terlengkap",
