@@ -38,6 +38,10 @@ document.addEventListener('DOMContentLoaded', () => {
         authAlert.classList.remove('d-none');
     }
 
+    function normalizeIdentifier(identifier) {
+        return String(identifier || '').trim().toLowerCase();
+    }
+
     function loadStaticUsers() {
         const raw = localStorage.getItem('webAuthUsers');
         try {
@@ -73,6 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function staticRegister(identifier, password, adminCode) {
+        identifier = normalizeIdentifier(identifier);
         const users = loadStaticUsers();
         if (users.some(user => user.identifier === identifier)) {
             return { success: false, error: 'Email / No HP sudah terdaftar.' };
@@ -99,6 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function staticLogin(identifier, password) {
+        identifier = normalizeIdentifier(identifier);
         const users = loadStaticUsers();
         const user = users.find(u => u.identifier === identifier && u.password === password);
         if (!user) {
@@ -110,6 +116,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function staticForgotPassword(identifier, newPassword) {
+        identifier = normalizeIdentifier(identifier);
         const users = loadStaticUsers();
         const user = users.find(u => u.identifier === identifier);
         if (!user) {
@@ -124,7 +131,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Login Submission
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const identifier = document.getElementById('loginId').value;
+        const identifier = normalizeIdentifier(document.getElementById('loginId').value);
         const password = document.getElementById('loginPassword').value;
 
         try {
@@ -160,7 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Register Submission
     registerForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const identifier = document.getElementById('regId').value;
+        const identifier = normalizeIdentifier(document.getElementById('regId').value);
         const password = document.getElementById('regPassword').value;
         const adminCode = document.getElementById('regAdminCode').value;
 
@@ -197,7 +204,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Forgot Password Simulation
     forgotPasswordLink.addEventListener('click', async (e) => {
         e.preventDefault();
-        const identifier = prompt("Masukkan Email / No. HP Anda untuk reset password:");
+        const identifier = normalizeIdentifier(prompt("Masukkan Email / No. HP Anda untuk reset password:"));
         if (!identifier) return;
 
         const newPassword = prompt("Masukkan password baru Anda:");

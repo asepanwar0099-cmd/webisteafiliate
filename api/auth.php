@@ -19,15 +19,15 @@ if (!isset($input['action'])) {
 $action = $input['action'];
 
 if ($action === 'register') {
-    $identifier = $input['identifier']; // Email or Phone
-    $password = $input['password'];
-    $adminCode = $input['adminCode'] ?? '';
+    $identifier = isset($input['identifier']) ? trim(strtolower($input['identifier'])) : '';
+    $password = $input['password'] ?? '';
+    $adminCode = trim($input['adminCode'] ?? '');
 
     $users = json_decode(file_get_contents($usersFile), true);
     
     // Check if exists
     foreach ($users as $user) {
-        if ($user['identifier'] === $identifier) {
+        if (trim(strtolower($user['identifier'])) === $identifier) {
             echo json_encode(['success' => false, 'error' => 'Email / No HP sudah terdaftar.']);
             exit;
         }
@@ -61,13 +61,13 @@ if ($action === 'register') {
 }
 
 if ($action === 'login') {
-    $identifier = $input['identifier'];
-    $password = $input['password'];
+    $identifier = isset($input['identifier']) ? trim(strtolower($input['identifier'])) : '';
+    $password = $input['password'] ?? '';
 
     $users = json_decode(file_get_contents($usersFile), true);
 
     foreach ($users as $user) {
-        if ($user['identifier'] === $identifier) {
+        if (trim(strtolower($user['identifier'])) === $identifier) {
             // Check password (handle plain text 'password' for default admin, or hashed for new users)
             if (password_verify($password, $user['password']) || $password === $user['password']) {
                 $_SESSION['user_id'] = $user['id'];
