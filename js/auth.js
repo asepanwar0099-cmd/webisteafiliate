@@ -134,6 +134,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const identifier = normalizeIdentifier(document.getElementById('loginId').value);
         const password = document.getElementById('loginPassword').value;
 
+        if (isStaticFallback()) {
+            const data = staticLogin(identifier, password);
+            if (data.success) {
+                window.location.href = data.role === 'admin' ? 'admin.html' : 'index.html';
+            } else {
+                showAlert(data.error);
+            }
+            return;
+        }
+
         try {
             const res = await fetch('api/auth.php', {
                 method: 'POST',
@@ -151,16 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 showAlert(data.error);
             }
         } catch (err) {
-            if (isStaticFallback()) {
-                const data = staticLogin(identifier, password);
-                if (data.success) {
-                    window.location.href = data.role === 'admin' ? 'admin.html' : 'index.html';
-                } else {
-                    showAlert(data.error);
-                }
-            } else {
-                showAlert('Terjadi kesalahan koneksi. Backend PHP tidak ditemukan.');
-            }
+            showAlert('Terjadi kesalahan koneksi. Backend PHP tidak ditemukan.');
         }
     });
 
@@ -170,6 +171,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const identifier = normalizeIdentifier(document.getElementById('regId').value);
         const password = document.getElementById('regPassword').value;
         const adminCode = document.getElementById('regAdminCode').value.trim();
+
+        if (isStaticFallback()) {
+            const data = staticRegister(identifier, password, adminCode);
+            if (data.success) {
+                window.location.href = data.role === 'admin' ? 'admin.html' : 'index.html';
+            } else {
+                showAlert(data.error);
+            }
+            return;
+        }
 
         try {
             const res = await fetch('api/auth.php', {
@@ -188,16 +199,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 showAlert(data.error);
             }
         } catch (err) {
-            if (isStaticFallback()) {
-                const data = staticRegister(identifier, password, adminCode);
-                if (data.success) {
-                    window.location.href = data.role === 'admin' ? 'admin.html' : 'index.html';
-                } else {
-                    showAlert(data.error);
-                }
-            } else {
-                showAlert('Terjadi kesalahan koneksi. Backend PHP tidak ditemukan.');
-            }
+            showAlert('Terjadi kesalahan koneksi. Backend PHP tidak ditemukan.');
         }
     });
 
