@@ -47,6 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const res = await fetch('api/auth.php', {
                 method: 'POST',
+                credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action: 'login', identifier, password })
             });
@@ -72,6 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const res = await fetch('api/auth.php', {
                 method: 'POST',
+                credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action: 'register', identifier, password, adminCode })
             });
@@ -99,6 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const res = await fetch('api/auth.php', {
                 method: 'POST',
+                credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action: 'forgot_password', identifier, newPassword })
             });

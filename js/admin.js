@@ -23,6 +23,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
         const res = await fetch('api/auth.php', {
             method: 'POST',
+            credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'check' })
         });
@@ -41,6 +42,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('btnAdminLogout').addEventListener('click', async () => {
         await fetch('api/auth.php', {
             method: 'POST',
+            credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'logout' })
         });

@@ -30,6 +30,7 @@ async function checkAuth() {
     try {
         const res = await fetch('api/auth.php', {
             method: 'POST',
+            credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'check' })
         });
@@ -56,6 +57,7 @@ async function checkAuth() {
                 e.preventDefault();
                 await fetch('api/auth.php', {
                     method: 'POST',
+                    credentials: 'include',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ action: 'logout' })
                 });
