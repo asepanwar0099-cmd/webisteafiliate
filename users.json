@@ -10,5 +10,17 @@
         "identifier": "0895326738684",
         "password": "$2y$10$zOnMfmq9UVw1UaNuehm\/Weu0Tc7BWz7olxJY4qzhL\/86oxvVJjrGe",
         "role": "customer"
+    },
+    {
+        "id": "user_1782126887",
+        "identifier": "asepanwar0099@gmail.com",
+        "password": "$2y$10$sPon1A.q0cNtT2QD51qxqOLYy4iiHnkujtv8qQDzc91cemu\/nuu2K",
+        "role": "customer"
+    },
+    {
+        "id": "user_1782127004",
+        "identifier": "085841563592",
+        "password": "$2y$10$BI2GKMwHupygL0e5qNevuullcySEY4AaS.QrJuILg7hytGMhPHI2m",
+        "role": "admin"
     }
 ]
