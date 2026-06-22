@@ -169,7 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         const identifier = normalizeIdentifier(document.getElementById('regId').value);
         const password = document.getElementById('regPassword').value;
-        const adminCode = document.getElementById('regAdminCode').value;
+        const adminCode = document.getElementById('regAdminCode').value.trim();
 
         try {
             const res = await fetch('api/auth.php', {
