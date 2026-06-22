@@ -25,8 +25,87 @@ document.addEventListener('DOMContentLoaded', async () => {
     setupCartListeners();
 });
 
+function isStaticFallback() {
+    return window.location.hostname.endsWith('.github.io') || window.location.hostname.includes('github.dev') || window.location.protocol === 'file:';
+}
+
+function loadStaticUsers() {
+    const raw = localStorage.getItem('webAuthUsers');
+    try {
+        return raw ? JSON.parse(raw) : [];
+    } catch {
+        return [];
+    }
+}
+
+function getStaticCurrentUser() {
+    const raw = localStorage.getItem('webAuthCurrent');
+    try {
+        return raw ? JSON.parse(raw) : null;
+    } catch {
+        return null;
+    }
+}
+
+function setStaticCurrentUser(user) {
+    if (user) {
+        localStorage.setItem('webAuthCurrent', JSON.stringify(user));
+    } else {
+        localStorage.removeItem('webAuthCurrent');
+    }
+}
+
+function staticLogout() {
+    setStaticCurrentUser(null);
+}
+
+function renderAuthButtons(data) {
+    if (!data || !data.loggedIn) return;
+
+    currentUser = data;
+    authBtnContainer.innerHTML = `
+        <div class="dropdown">
+            <button class="btn btn-outline-pink btn-sm rounded-pill px-3 dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                <i class="fas fa-user-circle"></i> Hai, ${data.identifier.split('@')[0]}
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                <li><a class="dropdown-item" href="#" id="btnLogout"><i class="fas fa-sign-out-alt text-danger"></i> Keluar</a></li>
+            </ul>
+        </div>
+    `;
+
+    if (data.role === 'admin') {
+        adminLinkContainer.style.display = 'block';
+    }
+
+    document.getElementById('btnLogout').addEventListener('click', async (e) => {
+        e.preventDefault();
+        if (isStaticFallback()) {
+            staticLogout();
+            window.location.reload();
+            return;
+        }
+
+        await fetch('api/auth.php', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'logout' })
+        });
+        window.location.reload();
+    });
+}
+
 // Check Authentication State
 async function checkAuth() {
+    if (isStaticFallback()) {
+        const user = getStaticCurrentUser();
+        if (user) {
+            renderAuthButtons({ loggedIn: true, identifier: user.identifier, role: user.role });
+        }
+        return;
+    }
+
     try {
         const res = await fetch('api/auth.php', {
             method: 'POST',
@@ -37,35 +116,14 @@ async function checkAuth() {
         const data = await res.json();
         
         if (data.loggedIn) {
-            currentUser = data;
-            authBtnContainer.innerHTML = `
-                <div class="dropdown">
-                    <button class="btn btn-outline-pink btn-sm rounded-pill px-3 dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                        <i class="fas fa-user-circle"></i> Hai, ${data.identifier.split('@')[0]}
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
-                        <li><a class="dropdown-item" href="#" id="btnLogout"><i class="fas fa-sign-out-alt text-danger"></i> Keluar</a></li>
-                    </ul>
-                </div>
-            `;
-            
-            if (data.role === 'admin') {
-                adminLinkContainer.style.display = 'block';
-            }
-
-            document.getElementById('btnLogout').addEventListener('click', async (e) => {
-                e.preventDefault();
-                await fetch('api/auth.php', {
-                    method: 'POST',
-                    credentials: 'include',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'logout' })
-                });
-                window.location.reload();
-            });
+            renderAuthButtons(data);
         }
     } catch (err) {
         console.error('Auth check failed', err);
+        const user = getStaticCurrentUser();
+        if (user) {
+            renderAuthButtons({ loggedIn: true, identifier: user.identifier, role: user.role });
+        }
     }
 }
 

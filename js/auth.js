@@ -38,6 +38,89 @@ document.addEventListener('DOMContentLoaded', () => {
         authAlert.classList.remove('d-none');
     }
 
+    function loadStaticUsers() {
+        const raw = localStorage.getItem('webAuthUsers');
+        try {
+            return raw ? JSON.parse(raw) : [];
+        } catch {
+            return [];
+        }
+    }
+
+    function saveStaticUsers(users) {
+        localStorage.setItem('webAuthUsers', JSON.stringify(users));
+    }
+
+    function getStaticCurrentUser() {
+        const raw = localStorage.getItem('webAuthCurrent');
+        try {
+            return raw ? JSON.parse(raw) : null;
+        } catch {
+            return null;
+        }
+    }
+
+    function setStaticCurrentUser(user) {
+        if (user) {
+            localStorage.setItem('webAuthCurrent', JSON.stringify(user));
+        } else {
+            localStorage.removeItem('webAuthCurrent');
+        }
+    }
+
+    function isStaticFallback() {
+        return window.location.hostname.endsWith('.github.io') || window.location.hostname.includes('github.dev') || window.location.protocol === 'file:';
+    }
+
+    function staticRegister(identifier, password, adminCode) {
+        const users = loadStaticUsers();
+        if (users.some(user => user.identifier === identifier)) {
+            return { success: false, error: 'Email / No HP sudah terdaftar.' };
+        }
+
+        let role = 'customer';
+        if (adminCode === 'ADMINPINK2026') {
+            role = 'admin';
+        } else if (adminCode.trim() !== '') {
+            return { success: false, error: 'Kode Admin salah. Kosongkan jika mendaftar sebagai pelanggan.' };
+        }
+
+        const newUser = {
+            id: 'local_' + Date.now(),
+            identifier,
+            password,
+            role
+        };
+        users.push(newUser);
+        saveStaticUsers(users);
+        setStaticCurrentUser({ id: newUser.id, identifier: newUser.identifier, role: newUser.role });
+
+        return { success: true, role };
+    }
+
+    function staticLogin(identifier, password) {
+        const users = loadStaticUsers();
+        const user = users.find(u => u.identifier === identifier && u.password === password);
+        if (!user) {
+            return { success: false, error: 'Kredensial tidak valid.' };
+        }
+
+        setStaticCurrentUser({ id: user.id, identifier: user.identifier, role: user.role });
+        return { success: true, role: user.role };
+    }
+
+    function staticForgotPassword(identifier, newPassword) {
+        const users = loadStaticUsers();
+        const user = users.find(u => u.identifier === identifier);
+        if (!user) {
+            return { success: false, error: 'Email / No HP tidak ditemukan.' };
+        }
+
+        user.password = newPassword;
+        saveStaticUsers(users);
+        return { success: true, message: 'Password berhasil di-reset. Silakan login.' };
+    }
+
     // Login Submission
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -51,15 +134,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action: 'login', identifier, password })
             });
+
+            if (!res.ok) throw new Error('Backend tidak tersedia');
             const data = await res.json();
-            
+
             if (data.success) {
                 window.location.href = data.role === 'admin' ? 'admin.html' : 'index.html';
             } else {
                 showAlert(data.error);
             }
         } catch (err) {
-            showAlert('Terjadi kesalahan koneksi.');
+            if (isStaticFallback()) {
+                const data = staticLogin(identifier, password);
+                if (data.success) {
+                    window.location.href = data.role === 'admin' ? 'admin.html' : 'index.html';
+                } else {
+                    showAlert(data.error);
+                }
+            } else {
+                showAlert('Terjadi kesalahan koneksi. Backend PHP tidak ditemukan.');
+            }
         }
     });
 
@@ -77,15 +171,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action: 'register', identifier, password, adminCode })
             });
+
+            if (!res.ok) throw new Error('Backend tidak tersedia');
             const data = await res.json();
-            
+
             if (data.success) {
                 window.location.href = data.role === 'admin' ? 'admin.html' : 'index.html';
             } else {
                 showAlert(data.error);
             }
         } catch (err) {
-            showAlert('Terjadi kesalahan koneksi.');
+            if (isStaticFallback()) {
+                const data = staticRegister(identifier, password, adminCode);
+                if (data.success) {
+                    window.location.href = data.role === 'admin' ? 'admin.html' : 'index.html';
+                } else {
+                    showAlert(data.error);
+                }
+            } else {
+                showAlert('Terjadi kesalahan koneksi. Backend PHP tidak ditemukan.');
+            }
         }
     });
 
@@ -105,15 +210,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action: 'forgot_password', identifier, newPassword })
             });
+
+            if (!res.ok) throw new Error('Backend tidak tersedia');
             const data = await res.json();
-            
+
             if (data.success) {
                 showAlert(data.message, 'success');
             } else {
                 showAlert(data.error);
             }
         } catch (err) {
-            showAlert('Terjadi kesalahan koneksi.');
+            if (isStaticFallback()) {
+                const data = staticForgotPassword(identifier, newPassword);
+                if (data.success) {
+                    showAlert(data.message, 'success');
+                } else {
+                    showAlert(data.error);
+                }
+            } else {
+                showAlert('Terjadi kesalahan koneksi. Backend PHP tidak ditemukan.');
+            }
         }
     });
 

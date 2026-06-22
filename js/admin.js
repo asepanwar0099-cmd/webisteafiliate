@@ -18,28 +18,65 @@ let allProducts = [];
 
 const formatRupiah = (number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number);
 
+function isStaticFallback() {
+    return window.location.hostname.endsWith('.github.io') || window.location.hostname.includes('github.dev') || window.location.protocol === 'file:';
+}
+
+function getStaticCurrentUser() {
+    const raw = localStorage.getItem('webAuthCurrent');
+    try {
+        return raw ? JSON.parse(raw) : null;
+    } catch {
+        return null;
+    }
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
     // 1. Check Auth
     try {
-        const res = await fetch('api/auth.php', {
-            method: 'POST',
-            credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'check' })
-        });
-        const data = await res.json();
-        
-        if (!data.loggedIn || data.role !== 'admin') {
-            alert('Akses Ditolak. Anda bukan Admin.');
+        if (isStaticFallback()) {
+            const user = getStaticCurrentUser();
+            if (!user || user.role !== 'admin') {
+                alert('Akses Ditolak. Anda bukan Admin.');
+                window.location.href = 'index.html';
+                return;
+            }
+        } else {
+            const res = await fetch('api/auth.php', {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'check' })
+            });
+            const data = await res.json();
+            
+            if (!data.loggedIn || data.role !== 'admin') {
+                alert('Akses Ditolak. Anda bukan Admin.');
+                window.location.href = 'index.html';
+                return;
+            }
+        }
+    } catch(err) {
+        if (isStaticFallback()) {
+            const user = getStaticCurrentUser();
+            if (!user || user.role !== 'admin') {
+                window.location.href = 'index.html';
+                return;
+            }
+        } else {
             window.location.href = 'index.html';
             return;
         }
-    } catch(err) {
-        window.location.href = 'index.html';
     }
 
     // Handle Logout
     document.getElementById('btnAdminLogout').addEventListener('click', async () => {
+        if (isStaticFallback()) {
+            localStorage.removeItem('webAuthCurrent');
+            window.location.href = 'index.html';
+            return;
+        }
+
         await fetch('api/auth.php', {
             method: 'POST',
             credentials: 'include',
